@@ -2,7 +2,7 @@ let prismaInstance = null;
 
 const getPrisma = () => {
   if (!prismaInstance) {
-    const { PrismaClient } = require('@prisma/client');
+    const { PrismaClient } = require('@/generated/client');
     const { PrismaLibSql } = require('@prisma/adapter-libsql');
     
     let dbUrl = process.env.DATABASE_URL;
