@@ -1,65 +1,177 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useCallback } from "react";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
+import AddMediaForm from "@/components/AddMediaForm";
+import ImageGrid from "@/components/ImageGrid";
+import ImageModal from "@/components/ImageModal";
+import { ChevronRight } from "lucide-react";
+import toast from "react-hot-toast";
+
+const tabs = ["Images", "Videos"];
+
+export default function Dashboard() {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isAddMediaOpen, setIsAddMediaOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Images");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchImages = useCallback(async () => {
+    try {
+      const res = await fetch("/api/images");
+      const data = await res.json();
+      if (res.ok) {
+        setImages(data.images);
+      } else {
+        toast.error("Failed to load images");
+      }
+    } catch (err) {
+      toast.error("Network error while fetching images");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
+
+  const handleUploadSuccess = (newImage) => {
+    setImages((prev) => [newImage, ...prev]);
+    setIsAddMediaOpen(false);
+  };
+
+  const handleDeleteImage = async (image) => {
+    if (!confirm("Are you sure you want to delete this media?")) return;
+    
+    try {
+      const response = await fetch(`/api/images/${image.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete media");
+      }
+
+      toast.success("Media deleted successfully");
+      setImages((prev) => prev.filter((img) => img.id !== image.id));
+      if (selectedImage?.id === image.id) {
+        setSelectedImage(null);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message);
+    }
+  };
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // ... (keep the rest the same up to return)
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+      </div>
+      
+      <div className="flex-1 flex flex-col min-w-0 w-full">
+        <Header 
+          onAddMedia={() => setIsAddMediaOpen(true)} 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onMenuToggle={() => setIsSidebarOpen(true)}
+        />
+        
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto relative">
+          <div className="max-w-7xl mx-auto">
+            {/* Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+                {tabs.map(tab => (
+                  <button 
+                    key={tab} 
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      tab === activeTab 
+                      ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' 
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Title */}
+              <h2 className="text-base font-black text-slate-900 dark:text-slate-100 mb-6 uppercase tracking-wider">
+                Media Gallery
+              </h2>
+
+              {/* Grid */}
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600"></div>
+                </div>
+              ) : (
+                <ImageGrid 
+                  images={images.filter((media) => {
+                    const isVideo = media.url.match(/\.(mp4|webm|ogg|mov)$/i);
+                    const matchesType = activeTab === "Videos" ? isVideo : !isVideo;
+                    const matchesSearch = media.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    return matchesType && matchesSearch;
+                  })} 
+                  onImageClick={setSelectedImage} 
+                  onDeleteImage={handleDeleteImage}
+                />
+              )}
+            </div>
+        </main>
+      </div>
+
+    {/* Add Media Modal */}
+      {isAddMediaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl">
+            <AddMediaForm 
+              onUploadSuccess={handleUploadSuccess} 
+              onCancel={() => setIsAddMediaOpen(false)} 
+              mediaType={activeTab}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          image={selectedImage}
+          onClose={() => setSelectedImage(null)}
+          onDelete={(id) => setImages((prev) => prev.filter((img) => img.id !== id))}
+        />
+      )}
     </div>
+  );
+}
+
+// Simple internal ChevronLeft component to match layout
+function ChevronLeft(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
   );
 }
