@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 const s3Client = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
