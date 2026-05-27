@@ -22,6 +22,13 @@ export async function POST(request) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
+    if (!process.env.R2_BUCKET_NAME) {
+      return NextResponse.json(
+        { error: "Vercel Environment Variable R2_BUCKET_NAME is missing! Please add it to your Vercel project settings." },
+        { status: 500 }
+      );
+    }
+
     // Fetch the file from the provided URL
     const fetchResponse = await fetch(url);
     if (!fetchResponse.ok) {

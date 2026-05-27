@@ -29,6 +29,13 @@ export async function POST(request) {
       );
     }
 
+    if (!process.env.R2_BUCKET_NAME) {
+      return NextResponse.json(
+        { error: "Vercel Environment Variable R2_BUCKET_NAME is missing! Please add it to your Vercel project settings." },
+        { status: 500 }
+      );
+    }
+
     // Validate file type
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
