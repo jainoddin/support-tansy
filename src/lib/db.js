@@ -1,19 +1,23 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 
-process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./dev.db";
+let prismaInstance = null;
 
-const adapter = new PrismaLibSql({
-  url: 'file:./dev.db',
-});
-
-const prismaClientSingleton = () => {
-  return new PrismaClient({
-    adapter,
-  });
+const getPrisma = () => {
+  if (!prismaInstance) {
+    process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./dev.db";
+    const adapter = new PrismaLibSql({
+      url: process.env.DATABASE_URL,
+    });
+    prismaInstance = new PrismaClient({ adapter });
+  }
+  return prismaInstance;
 };
 
-// We are bypassing globalThis.prisma caching so the dev server uses the fixed adapter
-const prisma = prismaClientSingleton();
+const prisma = new Proxy({}, {
+  get(target, prop) {
+    return getPrisma()[prop];
+  }
+});
 
 export default prisma;
