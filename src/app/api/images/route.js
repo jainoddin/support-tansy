@@ -15,7 +15,7 @@ export async function GET() {
   } catch (error) {
     console.error("Fetch images error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch images." },
+      { error: "Failed to fetch images.", details: String(error.message || error) },
       { status: 500 }
     );
   }
