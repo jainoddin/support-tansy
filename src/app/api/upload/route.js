@@ -1,7 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import prisma from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
@@ -63,15 +62,16 @@ export async function POST(request) {
 
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
 
-    const newImage = await prisma.image.create({
-      data: {
-        url: publicUrl,
-        r2Key: fileName,
-        name: customName || originalName,
-        folder: folder || null,
-        subFolder: subFolder || null,
-      },
-    });
+    // Instead of saving to a database, we just return the object shape the frontend expects
+    const newImage = {
+      id: fileName,
+      url: publicUrl,
+      r2Key: fileName,
+      name: customName || originalName,
+      folder: folder || null,
+      subFolder: subFolder || null,
+      createdAt: new Date().toISOString(),
+    };
 
     return NextResponse.json({ image: newImage, success: true });
   } catch (error) {

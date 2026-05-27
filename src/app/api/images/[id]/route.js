@@ -1,6 +1,5 @@
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
@@ -28,27 +27,16 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // 1. Get the image from DB to find the r2Key
-    const image = await prisma.image.findUnique({
-      where: { id },
-    });
+    // The ID is now simply the r2Key!
+    const r2Key = id;
 
-    if (!image) {
-      return NextResponse.json({ error: "Image not found" }, { status: 404 });
-    }
-
-    // 2. Delete from R2
+    // Delete from R2
     const command = new DeleteObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
-      Key: image.r2Key,
+      Key: r2Key,
     });
 
     await s3Client.send(command);
-
-    // 3. Delete from Database
-    await prisma.image.delete({
-      where: { id },
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

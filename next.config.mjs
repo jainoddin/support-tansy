@@ -8,7 +8,6 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['@prisma/client', '@libsql/client', '@prisma/adapter-libsql'],
 };
 
 export default nextConfig;
