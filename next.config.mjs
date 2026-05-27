@@ -9,11 +9,6 @@ const nextConfig = {
     ],
   },
   serverExternalPackages: ['@prisma/client', '@libsql/client', '@prisma/adapter-libsql'],
-  experimental: {
-    outputFileTracingIncludes: {
-      '/api/**/*': ['./node_modules/.prisma/**/*'],
-    },
-  },
 };
 
 export default nextConfig;
